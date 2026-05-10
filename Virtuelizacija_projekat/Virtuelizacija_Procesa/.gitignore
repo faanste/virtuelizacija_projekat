@@ -1,0 +1,45 @@
+# Build Folders
+bin/
+obj/
+Debug/
+Release/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.slnLaunch.user
+
+.vs/
+
+# Visual Studio temporary files
+*.ncb
+*.aps
+*.log
+*.vspscc
+*.vssscc
+*.pdb
+
+# Auto-generated files
+*.Designer.cs
+*.generated.cs
+*.g.cs
+*.g.i.cs
+
+# NuGet Packages
+*.nupkg
+packages/
+*.snupkg
+
+# ReSharper
+_ReSharper*/
+*.DotSettings.user
+
+# Windows Explorer Thumbnails
+Thumbs.db
+ehthumbs.db
+
+# WCF temporary files
+*.svcinfo
+*.svcmap
