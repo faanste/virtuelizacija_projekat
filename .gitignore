@@ -1,12 +1,10 @@
-﻿# Build folders
+﻿# Build Folders - Obavezno ignorisati
 [Bb]in/
 [Oo]bj/
 [Dd]ebug/
 [Rr]elease/
-x64/
-x86/
 
-# Visual Studio user-specific files
+# User-specific files (pode�avanja tvog Visual Studija)
 *.suo
 *.user
 *.userosscache
@@ -14,35 +12,26 @@ x86/
 *.slnLaunch.user
 .vs/
 
-# Temporary files and logs
-*.log
-*.tmp
-*.cache
+# Privremeni fajlovi i logovi
 *.ncb
 *.aps
+*.log
 *.vspscc
 *.vssscc
+*.tmp
 
-# Debug symbols
+# PDB fajlovi (debug simboli, ne trebaju na GitHub-u)
 *.pdb
 
-# NuGet
+# NuGet i paketi
 packages/
 *.nupkg
 *.snupkg
 
-# Test results
-TestResults/
-
-# System files
+# Sistemski fajlovi
 Thumbs.db
 ehthumbs.db
-Desktop.ini
 
-# WCF generated metadata
+# WCF privremeni fajlovi (samo klijentski proxy meta-podaci)
 *.svcinfo
 *.svcmap
-
-# Optional: Rider / VS Code
-.idea/
-.vscode/
