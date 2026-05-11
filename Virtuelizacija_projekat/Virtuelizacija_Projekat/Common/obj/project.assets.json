@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
+      "projectUniqueName": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\RADI\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
       "projectName": "Common",
-      "projectPath": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
+      "projectPath": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\RADI\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
       "packagesPath": "C:\\Users\\Mateja\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\obj\\",
+      "outputPath": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\RADI\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
