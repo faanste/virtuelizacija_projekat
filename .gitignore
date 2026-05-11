@@ -1,0 +1,48 @@
+﻿# Build folders
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# Visual Studio user-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.slnLaunch.user
+.vs/
+
+# Temporary files and logs
+*.log
+*.tmp
+*.cache
+*.ncb
+*.aps
+*.vspscc
+*.vssscc
+
+# Debug symbols
+*.pdb
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# Test results
+TestResults/
+
+# System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# WCF generated metadata
+*.svcinfo
+*.svcmap
+
+# Optional: Rider / VS Code
+.idea/
+.vscode/
