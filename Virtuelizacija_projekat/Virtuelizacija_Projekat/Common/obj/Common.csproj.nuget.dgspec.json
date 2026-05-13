@@ -1,15 +1,15 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Win 10\\source\\repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj": {}
+    "C:\\Users\\Win 10\\Source\\Repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Win 10\\source\\repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj": {
+    "C:\\Users\\Win 10\\Source\\Repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Win 10\\source\\repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
+        "projectUniqueName": "C:\\Users\\Win 10\\Source\\Repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
         "projectName": "Common",
-        "projectPath": "C:\\Users\\Win 10\\source\\repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
+        "projectPath": "C:\\Users\\Win 10\\Source\\Repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
         "packagesPath": "C:\\Users\\Win 10\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\Win 10\\source\\repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\obj\\",
         "projectStyle": "PackageReference",
