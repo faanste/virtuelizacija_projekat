@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using
+using System.ServiceModel;
 
 namespace Server
 {
@@ -11,11 +7,28 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            int a = 5;
-            int b = 6;
-            int c = 7;
-            int d = 8;
-            int e = 9;
+            ServiceHost host = null;
+
+            try
+            {
+                host = new ServiceHost(typeof(SensorService));
+                host.Open();
+
+                Console.WriteLine("Server je pokrenut.");
+                Console.WriteLine("Pritisni ENTER za zaustavljanje servera.");
+                Console.ReadLine();
+
+                host.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Greska: " + ex.Message);
+
+                if (host != null)
+                {
+                    host.Abort();
+                }
+            }
         }
     }
 }
