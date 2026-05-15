@@ -8,23 +8,23 @@
     "net8.0": []
   },
   "packageFolders": {
-    "C:\\Users\\Win 10\\.nuget\\packages\\": {},
+    "C:\\Users\\Mateja\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Win 10\\source\\repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
+      "projectUniqueName": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\PROJEKAT VIRTU\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
       "projectName": "Common",
-      "projectPath": "C:\\Users\\Win 10\\source\\repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
-      "packagesPath": "C:\\Users\\Win 10\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Win 10\\source\\repos\\virtuelizacija_projekat\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\obj\\",
+      "projectPath": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\PROJEKAT VIRTU\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\Common.csproj",
+      "packagesPath": "C:\\Users\\Mateja\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Mateja\\OneDrive - Univerzitet u Novom Sadu\\Desktop\\PROJEKAT VIRTU\\Virtuelizacija_projekat\\Virtuelizacija_Projekat\\Common\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\Win 10\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Mateja\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -72,7 +72,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.313/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
