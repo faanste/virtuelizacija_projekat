@@ -2,6 +2,8 @@
 using Common.Faults;
 using System;
 using System.ServiceModel;
+using System.Collections.Generic;
+
 
 namespace Klijent
 {
@@ -9,89 +11,75 @@ namespace Klijent
     {
         static void Main(string[] args)
         {
-            ChannelFactory<ISensorService> factory = null;
-            ISensorService proxy = null;
+ 
+            CsvLoader loader = new CsvLoader();
+            List<SensorSample> csvSamples = loader.LoadFirst100Samples();
+            Console.WriteLine($"Ucitano {csvSamples.Count} uzoraka iz CSV fajla.");
+            Console.WriteLine();
 
-            try
+
+            if (csvSamples.Count == 0)
             {
-                factory = new ChannelFactory<ISensorService>("SensorService");
-                proxy = factory.CreateChannel();
+                Console.WriteLine("Nema uzoraka za slanje. Provjeri CSV fajl i putanju u App.config.");
+                Console.WriteLine("Pritisni ENTER za kraj.");
+                Console.ReadLine();
+                return;
+            }
 
-                SessionMeta meta = new SessionMeta
-                {
-                    SessionId = "sesija-1",
-                    Volume = "Volume",
-                    T_DHT = "T_DHT",
-                    T_BMP = "T_BMP",
-                    Pressure = "Pressure",
-                    DateTime = "DateTime"
-                };
-
-                ServiceResponse startResponse = proxy.StartSession(meta);
-                PrintResponse(startResponse);
-
-                SensorSample validSample = new SensorSample
-                {
-                    Volume = 45.5,
-                    T_DHT = 23.4,
-                    T_BMP = 24.1,
-                    Pressure = 1013.25,
-                    DateTime = DateTime.Now
-                };
-
-                ServiceResponse pushResponse = proxy.PushSample(validSample);
-                PrintResponse(pushResponse);
-
-                SensorSample invalidSample = new SensorSample
-                {
-                    Volume = 50,
-                    T_DHT = 24,
-                    T_BMP = 24.5,
-                    Pressure = -5,
-                    DateTime = DateTime.Now
-                };
-
-                Console.WriteLine();
-                Console.WriteLine("Saljem nevalidan sample da testiram fault...");
-
+            Console.WriteLine("=== Slanje uzoraka na server ===");
+            using (SensorServiceClient client = new SensorServiceClient())
+            {
                 try
                 {
-                    proxy.PushSample(invalidSample);
+
+                    SessionMeta meta = new SessionMeta
+                    {
+                        SessionId = "sesija-1",
+                        Volume = "Volume",
+                        T_DHT = "T_DHT",
+                        T_BMP = "T_BMP",
+                        Pressure = "Pressure",
+                        DateTime = "DateTime"
+                    };
+
+                    ServiceResponse startResponse = client.Proxy.StartSession(meta);
+                    PrintResponse(startResponse);
+
+                    for (int i = 0; i < csvSamples.Count; i++)
+                    {
+                        try
+                        {
+                            ServiceResponse pushResponse = client.Proxy.PushSample(csvSamples[i]);
+                            Console.WriteLine($"[{i + 1}/{csvSamples.Count}] Sample poslan. ACK: {pushResponse.Ack}");
+                        }
+                        catch (FaultException<ValidationFault> ex)
+                        {
+                            Console.WriteLine($"[{i + 1}/{csvSamples.Count}] ValidationFault: {ex.Detail.Message}");
+                        }
+                        catch (FaultException<DataFormatFault> ex)
+                        {
+                            Console.WriteLine($"[{i + 1}/{csvSamples.Count}] DataFormatFault: {ex.Detail.Message}");
+                        }
+                    }
+ 
+                    ServiceResponse endResponse = client.Proxy.EndSession();
+                    PrintResponse(endResponse);
+
+                    
+                }
+                catch (FaultException<DataFormatFault> ex)
+                {
+                    Console.WriteLine("DataFormatFault: " + ex.Detail.Message);
                 }
                 catch (FaultException<ValidationFault> ex)
                 {
-                    Console.WriteLine("Uhvaćen ValidationFault: " + ex.Detail.Message);
+                    Console.WriteLine("ValidationFault: " + ex.Detail.Message);
                 }
-
-                ServiceResponse endResponse = proxy.EndSession();
-                PrintResponse(endResponse);
-
-                ((IClientChannel)proxy).Close();
-                factory.Close();
-            }
-            catch (FaultException<DataFormatFault> ex)
-            {
-                Console.WriteLine("DataFormatFault: " + ex.Detail.Message);
-            }
-            catch (FaultException<ValidationFault> ex)
-            {
-                Console.WriteLine("ValidationFault: " + ex.Detail.Message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Greska na klijentu: " + ex.Message);
-
-                if (proxy != null)
+                catch (Exception ex)
                 {
-                    ((IClientChannel)proxy).Abort();
-                }
-
-                if (factory != null)
-                {
-                    factory.Abort();
+                    Console.WriteLine("Greska na klijentu: " + ex.Message);
                 }
             }
-
             Console.WriteLine();
             Console.WriteLine("Pritisni ENTER za kraj.");
             Console.ReadLine();
