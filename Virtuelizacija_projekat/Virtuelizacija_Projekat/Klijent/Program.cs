@@ -35,11 +35,11 @@ namespace Klijent
                     SessionMeta meta = new SessionMeta
                     {
                         SessionId = "sesija-1",
-                        Volume = "Volume",
-                        T_DHT = "T_DHT",
-                        T_BMP = "T_BMP",
-                        Pressure = "Pressure",
-                        DateTime = "DateTime"
+                        Volume = "Volume [mV]",
+                        T_DHT = "Temperature-DHT [Celsius]",
+                        T_BMP = "Temperature-BMP [Celsius]",
+                        Pressure = "Pressure [Hectopascal]",
+                        DateTime = "Date time"
                     };
 
                     ServiceResponse startResponse = client.Proxy.StartSession(meta);

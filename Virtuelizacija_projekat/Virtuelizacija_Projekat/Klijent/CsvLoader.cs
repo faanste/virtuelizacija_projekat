@@ -70,14 +70,13 @@ namespace Klijent
 
                     while ((line = reader.ReadLine()) != null)
                     {
+                        redovUkupno++;  
+
                         if (validnih >= 100)
                         {
-                            redovUkupno++;
-                            logWriter.WriteLine($"[Red {redovUkupno + 1}] preskocen (vise od 100 redova): {line}");
+                            logWriter.WriteLine($"[Red {redovUkupno + 1}] preskocen...");
                             continue;
                         }
-
-                        redovUkupno++;
 
                         SensorSample sample;
                         string greskaOpis;
@@ -124,47 +123,44 @@ namespace Klijent
 
             string[] parts = line.Split(',');
 
-            // trebs da bude 5 kolona
-            if (parts.Length != 5)
+            if (parts.Length != 10)
             {
-                greskaOpis = $"Pogresan broj kolona: ocekivano 5, pronadjeno {parts.Length}.";
+                greskaOpis = $"Pogresan broj kolona: ocekivano 10, pronadjeno {parts.Length}.";
                 return false;
             }
 
-            double volume, tDht, tBmp, pressure;
             DateTime dateTime;
+            double volume, tDht, pressure, tBmp;
 
-            if (!double.TryParse(parts[0].Trim(), NumberStyles.Float, culture, out volume))
+            if (!DateTime.TryParse(parts[0].Trim(), culture, DateTimeStyles.None, out dateTime))
             {
-                greskaOpis = $"Nevalidan Volume: '{parts[0].Trim()}' (ocekuje se decimalni broj sa tackom).";
+                greskaOpis = $"Nevalidan DateTime: '{parts[0].Trim()}'.";
                 return false;
             }
 
-            if (!double.TryParse(parts[1].Trim(), NumberStyles.Float, culture, out tDht))
+            if (!double.TryParse(parts[1].Trim(), NumberStyles.Float, culture, out volume))
             {
-                greskaOpis = $"Nevalidan T_DHT: '{parts[1].Trim()}'.";
+                greskaOpis = $"Nevalidan Volume: '{parts[1].Trim()}'.";
                 return false;
             }
 
-            if (!double.TryParse(parts[2].Trim(), NumberStyles.Float, culture, out tBmp))
+            if (!double.TryParse(parts[3].Trim(), NumberStyles.Float, culture, out tDht))
             {
-                greskaOpis = $"Nevalidan T_BMP: '{parts[2].Trim()}'.";
+                greskaOpis = $"Nevalidan T_DHT: '{parts[3].Trim()}'.";
                 return false;
             }
 
-            if (!double.TryParse(parts[3].Trim(), NumberStyles.Float, culture, out pressure))
+            if (!double.TryParse(parts[4].Trim(), NumberStyles.Float, culture, out pressure))
             {
-                greskaOpis = $"Nevalidan Pressure: '{parts[3].Trim()}'.";
+                greskaOpis = $"Nevalidan Pressure: '{parts[4].Trim()}'.";
                 return false;
             }
 
-            if (!DateTime.TryParse(parts[4].Trim(), culture, DateTimeStyles.None, out dateTime))
+            if (!double.TryParse(parts[5].Trim(), NumberStyles.Float, culture, out tBmp))
             {
-                greskaOpis = $"Nevalidan DateTime: '{parts[4].Trim()}'.";
+                greskaOpis = $"Nevalidan T_BMP: '{parts[5].Trim()}'.";
                 return false;
             }
-
-
 
             sample = new SensorSample
             {
