@@ -2,6 +2,7 @@
 using Common.Faults;
 using System;
 using System.Configuration;
+using System.Globalization;
 using System.ServiceModel;
 
 namespace Server
@@ -9,11 +10,26 @@ namespace Server
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class SensorService : ISensorService
     {
+        public event TransferStartedHandler OnTransferStarted;
+        public event SampleReceivedHandler OnSampleReceived;
+        public event TransferCompletedHandler OnTransferCompleted;
+        public event WarningRaisedHandler OnWarningRaised;
+
         private bool sessionStarted = false;
         private MeasurementFileWriter fileWriter;
         private readonly string serverDataPath;
+
         private int receivedSamples = 0;
         private DateTime transferStartTime;
+
+        private SensorSample previousSample = null;
+        private double volumeSum = 0;
+        private int volumeMeanCount = 0;
+
+        private readonly double vThreshold;
+        private readonly double tDhtThreshold;
+        private readonly double tBmpThreshold;
+        private readonly double meanDeviationPercent;
 
         public SensorService()
         {
@@ -23,6 +39,18 @@ namespace Server
             {
                 serverDataPath = "data";
             }
+
+            vThreshold = ReadDoubleSetting("V_threshold", 100);
+            tDhtThreshold = ReadDoubleSetting("T_dht_threshold", 2);
+            tBmpThreshold = ReadDoubleSetting("T_bmp_threshold", 2);
+            meanDeviationPercent = ReadDoubleSetting("MeanDeviationPercent", 0.25);
+
+            if (meanDeviationPercent > 1)
+            {
+                meanDeviationPercent = meanDeviationPercent / 100;
+            }
+
+            SubscribeToEvents();
         }
 
         public ServiceResponse StartSession(SessionMeta meta)
@@ -37,18 +65,20 @@ namespace Server
             }
 
             fileWriter = new MeasurementFileWriter(serverDataPath);
-            sessionStarted = true;
 
+            sessionStarted = true;
             receivedSamples = 0;
+            previousSample = null;
+            volumeSum = 0;
+            volumeMeanCount = 0;
             transferStartTime = DateTime.Now;
 
-            Console.WriteLine("======================================");
-            Console.WriteLine("PRENOS U TOKU...");
-            Console.WriteLine("Sesija: " + meta.SessionId);
-            Console.WriteLine("Vreme pocetka: " + transferStartTime);
-            Console.WriteLine("======================================");
+            RaiseTransferStarted(new TransferStartedEventArgs
+            {
+                SessionId = meta.SessionId,
+                StartTime = transferStartTime
+            });
 
-            Console.WriteLine("Sesija je pokrenuta.");
             Console.WriteLine("Meta podaci:");
             Console.WriteLine("Volume: " + meta.Volume);
             Console.WriteLine("T_DHT: " + meta.T_DHT);
@@ -59,7 +89,7 @@ namespace Server
             return new ServiceResponse
             {
                 Ack = true,
-                Message = "StartSession uspesno izvrsen. Kreirani su measurements_session.csv i rejects.csv.",
+                Message = "StartSession uspesno izvrsen.",
                 Status = TransferStatus.IN_PROGRESS
             };
         }
@@ -92,17 +122,16 @@ namespace Server
 
             receivedSamples++;
 
-            Console.WriteLine("--------------------------------------");
-            Console.WriteLine("PRENOS U TOKU...");
-            Console.WriteLine("Primljen sample broj: " + receivedSamples);
-            Console.WriteLine("Volume: " + sample.Volume);
-            Console.WriteLine("T_DHT: " + sample.T_DHT);
-            Console.WriteLine("T_BMP: " + sample.T_BMP);
-            Console.WriteLine("Pressure: " + sample.Pressure);
-            Console.WriteLine("DateTime: " + sample.DateTime);
-            Console.WriteLine("--------------------------------------");
+            RaiseSampleReceived(new SampleReceivedEventArgs
+            {
+                Sample = sample,
+                SampleNumber = receivedSamples
+            });
 
-           
+            CheckWarnings(sample);
+
+            UpdateRunningMean(sample);
+            previousSample = sample;
 
             return new ServiceResponse
             {
@@ -129,18 +158,15 @@ namespace Server
                 fileWriter = null;
             }
 
-           
-
             DateTime transferEndTime = DateTime.Now;
             TimeSpan duration = transferEndTime - transferStartTime;
 
-            Console.WriteLine("======================================");
-            Console.WriteLine("ZAVRSEN PRENOS");
-            Console.WriteLine("Ukupno primljenih uzoraka: " + receivedSamples);
-            Console.WriteLine("Vreme pocetka: " + transferStartTime);
-            Console.WriteLine("Vreme zavrsetka: " + transferEndTime);
-            Console.WriteLine("Trajanje prenosa: " + duration.TotalSeconds.ToString("0.00") + " sekundi");
-            Console.WriteLine("======================================");
+            RaiseTransferCompleted(new TransferCompletedEventArgs
+            {
+                TotalSamples = receivedSamples,
+                EndTime = transferEndTime,
+                Duration = duration
+            });
 
             return new ServiceResponse
             {
@@ -148,6 +174,213 @@ namespace Server
                 Message = "EndSession uspesno izvrsen. Fajlovi su zatvoreni.",
                 Status = TransferStatus.COMPLETED
             };
+        }
+
+        private void SubscribeToEvents()
+        {
+            OnTransferStarted += HandleTransferStarted;
+            OnSampleReceived += HandleSampleReceived;
+            OnTransferCompleted += HandleTransferCompleted;
+            OnWarningRaised += HandleWarningRaised;
+        }
+
+        private void HandleTransferStarted(object sender, TransferStartedEventArgs e)
+        {
+            Console.WriteLine("======================================");
+            Console.WriteLine("[EVENT] OnTransferStarted");
+            Console.WriteLine("PRENOS U TOKU...");
+            Console.WriteLine("Sesija: " + e.SessionId);
+            Console.WriteLine("Vreme pocetka: " + e.StartTime);
+            Console.WriteLine("======================================");
+        }
+
+        private void HandleSampleReceived(object sender, SampleReceivedEventArgs e)
+        {
+            Console.WriteLine("--------------------------------------");
+            Console.WriteLine("[EVENT] OnSampleReceived");
+            Console.WriteLine("PRENOS U TOKU...");
+            Console.WriteLine("Primljen sample broj: " + e.SampleNumber);
+            Console.WriteLine("Volume: " + e.Sample.Volume);
+            Console.WriteLine("T_DHT: " + e.Sample.T_DHT);
+            Console.WriteLine("T_BMP: " + e.Sample.T_BMP);
+            Console.WriteLine("Pressure: " + e.Sample.Pressure);
+            Console.WriteLine("DateTime: " + e.Sample.DateTime);
+            Console.WriteLine("--------------------------------------");
+        }
+
+        private void HandleTransferCompleted(object sender, TransferCompletedEventArgs e)
+        {
+            Console.WriteLine("======================================");
+            Console.WriteLine("[EVENT] OnTransferCompleted");
+            Console.WriteLine("ZAVRSEN PRENOS");
+            Console.WriteLine("Ukupno primljenih uzoraka: " + e.TotalSamples);
+            Console.WriteLine("Vreme zavrsetka: " + e.EndTime);
+            Console.WriteLine("Trajanje prenosa: " + e.Duration.TotalSeconds.ToString("0.00", CultureInfo.InvariantCulture) + " sekundi");
+            Console.WriteLine("======================================");
+        }
+
+        private void HandleWarningRaised(object sender, WarningRaisedEventArgs e)
+        {
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Console.WriteLine("[EVENT] OnWarningRaised");
+            Console.WriteLine("Tip upozorenja: " + e.WarningType);
+            Console.WriteLine("Poruka: " + e.Message);
+            Console.WriteLine("Smer: " + e.Direction);
+            Console.WriteLine("Trenutna vrednost: " + e.CurrentValue.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Ocekivana vrednost: " + e.ExpectedValue.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Prag: " + e.Threshold.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Vreme: " + e.Time);
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        }
+
+        private void CheckWarnings(SensorSample sample)
+        {
+            if (previousSample != null)
+            {
+                double deltaV = sample.Volume - previousSample.Volume;
+
+                if (Math.Abs(deltaV) > vThreshold)
+                {
+                    RaiseWarningRaised(new WarningRaisedEventArgs
+                    {
+                        WarningType = "VolumeSpike",
+                        Message = "Detektovan je nagli skok buke.",
+                        Direction = GetDirection(deltaV),
+                        CurrentValue = deltaV,
+                        ExpectedValue = 0,
+                        Threshold = vThreshold,
+                        Time = sample.DateTime
+                    });
+                }
+
+                double deltaDht = sample.T_DHT - previousSample.T_DHT;
+
+                if (Math.Abs(deltaDht) > tDhtThreshold)
+                {
+                    RaiseWarningRaised(new WarningRaisedEventArgs
+                    {
+                        WarningType = "TemperatureSpikeDHT",
+                        Message = "Detektovan je nagli skok temperature na DHT senzoru.",
+                        Direction = GetDirection(deltaDht),
+                        CurrentValue = deltaDht,
+                        ExpectedValue = 0,
+                        Threshold = tDhtThreshold,
+                        Time = sample.DateTime
+                    });
+                }
+
+                double deltaBmp = sample.T_BMP - previousSample.T_BMP;
+
+                if (Math.Abs(deltaBmp) > tBmpThreshold)
+                {
+                    RaiseWarningRaised(new WarningRaisedEventArgs
+                    {
+                        WarningType = "TemperatureSpikeBMP",
+                        Message = "Detektovan je nagli skok temperature na BMP senzoru.",
+                        Direction = GetDirection(deltaBmp),
+                        CurrentValue = deltaBmp,
+                        ExpectedValue = 0,
+                        Threshold = tBmpThreshold,
+                        Time = sample.DateTime
+                    });
+                }
+            }
+
+            if (volumeMeanCount > 0)
+            {
+                double currentMean = volumeSum / volumeMeanCount;
+                double lowerLimit = currentMean * (1 - meanDeviationPercent);
+                double upperLimit = currentMean * (1 + meanDeviationPercent);
+
+                if (sample.Volume < lowerLimit)
+                {
+                    RaiseWarningRaised(new WarningRaisedEventArgs
+                    {
+                        WarningType = "OutOfBandWarning",
+                        Message = "Volume je ispod dozvoljenog odstupanja od tekuceg proseka.",
+                        Direction = "ispod ocekivane vrednosti",
+                        CurrentValue = sample.Volume,
+                        ExpectedValue = currentMean,
+                        Threshold = lowerLimit,
+                        Time = sample.DateTime
+                    });
+                }
+                else if (sample.Volume > upperLimit)
+                {
+                    RaiseWarningRaised(new WarningRaisedEventArgs
+                    {
+                        WarningType = "OutOfBandWarning",
+                        Message = "Volume je iznad dozvoljenog odstupanja od tekuceg proseka.",
+                        Direction = "iznad ocekivane vrednosti",
+                        CurrentValue = sample.Volume,
+                        ExpectedValue = currentMean,
+                        Threshold = upperLimit,
+                        Time = sample.DateTime
+                    });
+                }
+            }
+        }
+
+        private void UpdateRunningMean(SensorSample sample)
+        {
+            volumeSum += sample.Volume;
+            volumeMeanCount++;
+        }
+
+        private string GetDirection(double delta)
+        {
+            if (delta > 0)
+            {
+                return "iznad ocekivanog";
+            }
+
+            return "ispod ocekivanog";
+        }
+
+        private void RaiseTransferStarted(TransferStartedEventArgs e)
+        {
+            if (OnTransferStarted != null)
+            {
+                OnTransferStarted(this, e);
+            }
+        }
+
+        private void RaiseSampleReceived(SampleReceivedEventArgs e)
+        {
+            if (OnSampleReceived != null)
+            {
+                OnSampleReceived(this, e);
+            }
+        }
+
+        private void RaiseTransferCompleted(TransferCompletedEventArgs e)
+        {
+            if (OnTransferCompleted != null)
+            {
+                OnTransferCompleted(this, e);
+            }
+        }
+
+        private void RaiseWarningRaised(WarningRaisedEventArgs e)
+        {
+            if (OnWarningRaised != null)
+            {
+                OnWarningRaised(this, e);
+            }
+        }
+
+        private double ReadDoubleSetting(string key, double defaultValue)
+        {
+            string value = ConfigurationManager.AppSettings[key];
+
+            double parsedValue;
+
+            if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out parsedValue))
+            {
+                return parsedValue;
+            }
+
+            return defaultValue;
         }
 
         private void WriteRejectSafe(SensorSample sample, string reason)
