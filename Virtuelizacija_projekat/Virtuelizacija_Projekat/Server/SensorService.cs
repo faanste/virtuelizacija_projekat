@@ -15,6 +15,12 @@ namespace Server
         public event TransferCompletedHandler OnTransferCompleted;
         public event WarningRaisedHandler OnWarningRaised;
 
+        public event VolumeSpikeHandler OnVolumeSpike;
+        public event OutOfBandWarningHandler OnOutOfBandWarning;
+
+        public event TemperatureSpikeDHTHandler OnTemperatureSpikeDHT;
+        public event TemperatureSpikeBMPHandler OnTemperatureSpikeBMP;
+
         private bool sessionStarted = false;
         private MeasurementFileWriter fileWriter;
         private readonly string serverDataPath;
@@ -128,7 +134,9 @@ namespace Server
                 SampleNumber = receivedSamples
             });
 
-            CheckWarnings(sample);
+            CheckVolumeSpike(sample);
+            CheckOutOfBandWarning(sample);
+            CheckTemperatureSpikes(sample);
 
             UpdateRunningMean(sample);
             previousSample = sample;
@@ -182,6 +190,11 @@ namespace Server
             OnSampleReceived += HandleSampleReceived;
             OnTransferCompleted += HandleTransferCompleted;
             OnWarningRaised += HandleWarningRaised;
+
+            OnVolumeSpike += HandleVolumeSpike;
+            OnOutOfBandWarning += HandleOutOfBandWarning;
+            OnTemperatureSpikeDHT += HandleTemperatureSpikeDHT;
+            OnTemperatureSpikeBMP += HandleTemperatureSpikeBMP;
         }
 
         private void HandleTransferStarted(object sender, TransferStartedEventArgs e)
@@ -221,7 +234,7 @@ namespace Server
 
         private void HandleWarningRaised(object sender, WarningRaisedEventArgs e)
         {
-            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Console.WriteLine("======================================");
             Console.WriteLine("[EVENT] OnWarningRaised");
             Console.WriteLine("Tip upozorenja: " + e.WarningType);
             Console.WriteLine("Poruka: " + e.Message);
@@ -230,94 +243,225 @@ namespace Server
             Console.WriteLine("Ocekivana vrednost: " + e.ExpectedValue.ToString("0.###", CultureInfo.InvariantCulture));
             Console.WriteLine("Prag: " + e.Threshold.ToString("0.###", CultureInfo.InvariantCulture));
             Console.WriteLine("Vreme: " + e.Time);
-            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Console.WriteLine("=====================================");
         }
 
-        private void CheckWarnings(SensorSample sample)
+
+        private void HandleVolumeSpike(object sender, VolumeSpikeEventArgs e)
         {
-            if (previousSample != null)
+            Console.WriteLine("=======================================");
+            Console.WriteLine("[EVENT] VolumeSpike");
+            Console.WriteLine("Vreme: " + e.Time);
+            Console.WriteLine("Prethodni Volume: " + e.PreviousVolume.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Trenutni Volume: " + e.CurrentVolume.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Delta: " + e.DeltaV.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Prag: " + e.Threshold.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Smjer: " + e.Direction);
+            Console.WriteLine("=======================================");
+        }
+
+        private void HandleOutOfBandWarning(object sender, OutOfBandWarningEventArgs e)
+        {
+            Console.WriteLine("=======================================");
+            Console.WriteLine("[EVENT] OutOfBandWarning");
+            Console.WriteLine("Vreme: " + e.Time);
+            Console.WriteLine("Trenutni Volume: " + e.CurrentVolume.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Tekuci prosjek: " + e.Mean.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Granica: " + e.Limit.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Smjer: " + e.Direction);
+            Console.WriteLine("=======================================");
+        }
+
+        private void HandleTemperatureSpikeDHT(object sender, TemperatureSpikeEventArgs e)
+        {
+            Console.WriteLine("=======================================");
+            Console.WriteLine("[EVENT] TemperatureSpikeDHT");
+            Console.WriteLine("Vreme: " + e.Time);
+            Console.WriteLine("Prethodna T_DHT: " + e.PreviousValue.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Trenutna T_DHT: " + e.CurrentValue.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Delta: " + e.Delta.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Prag: " + e.Threshold.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Smjer: " + e.Direction);
+            Console.WriteLine("========================================");
+        }
+
+        private void HandleTemperatureSpikeBMP(object sender, TemperatureSpikeEventArgs e)
+        {
+            Console.WriteLine("=====================================");
+            Console.WriteLine("[EVENT] TemperatureSpikeBMP");
+            Console.WriteLine("Vreme: " + e.Time);
+            Console.WriteLine("Prethodna T_BMP: " + e.PreviousValue.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Trenutna T_BMP: " + e.CurrentValue.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Delta: " + e.Delta.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Prag: " + e.Threshold.ToString("0.###", CultureInfo.InvariantCulture));
+            Console.WriteLine("Smjer: " + e.Direction);
+            Console.WriteLine("=====================================");
+        }
+
+
+        private void CheckVolumeSpike(SensorSample sample)
+        {
+            if (previousSample == null)
+                return;
+
+            double deltaV = sample.Volume - previousSample.Volume;
+
+            if (Math.Abs(deltaV) > vThreshold)
             {
-                double deltaV = sample.Volume - previousSample.Volume;
-
-                if (Math.Abs(deltaV) > vThreshold)
+                if (OnVolumeSpike != null)
                 {
-                    RaiseWarningRaised(new WarningRaisedEventArgs
+                    OnVolumeSpike(this, new VolumeSpikeEventArgs
                     {
-                        WarningType = "VolumeSpike",
-                        Message = "Detektovan je nagli skok buke.",
-                        Direction = GetDirection(deltaV),
-                        CurrentValue = deltaV,
-                        ExpectedValue = 0,
+                        Time = sample.DateTime,
+                        DeltaV = deltaV,
+                        CurrentVolume = sample.Volume,
+                        PreviousVolume = previousSample.Volume,
                         Threshold = vThreshold,
-                        Time = sample.DateTime
+                        Direction = deltaV > 0 ? "iznad ocekivanog" : "ispod ocekivanog"
                     });
                 }
 
-                double deltaDht = sample.T_DHT - previousSample.T_DHT;
-
-                if (Math.Abs(deltaDht) > tDhtThreshold)
+                /*
+                RaiseWarningRaised(new WarningRaisedEventArgs
                 {
-                    RaiseWarningRaised(new WarningRaisedEventArgs
+                    WarningType = "VolumeSpike",
+                    Message = "Detektovan je nagli skok buke.",
+                    Direction = deltaV > 0 ? "iznad ocekivanog" : "ispod ocekivanog",
+                    CurrentValue = deltaV,
+                    ExpectedValue = 0,
+                    Threshold = vThreshold,
+                    Time = sample.DateTime
+                });
+                */
+            }
+        }
+
+
+        private void CheckOutOfBandWarning(SensorSample sample)
+        {
+            if (volumeMeanCount == 0)
+                return;
+
+            double mean = volumeSum / volumeMeanCount;
+            double lowerLimit = mean * (1 - meanDeviationPercent);
+            double upperLimit = mean * (1 + meanDeviationPercent);
+
+            if (sample.Volume < lowerLimit)
+            {
+                if (OnOutOfBandWarning != null)
+                {
+                    OnOutOfBandWarning(this, new OutOfBandWarningEventArgs
                     {
-                        WarningType = "TemperatureSpikeDHT",
-                        Message = "Detektovan je nagli skok temperature na DHT senzoru.",
-                        Direction = GetDirection(deltaDht),
-                        CurrentValue = deltaDht,
-                        ExpectedValue = 0,
+                        Time = sample.DateTime,
+                        CurrentVolume = sample.Volume,
+                        Mean = mean,
+                        Limit = lowerLimit,
+                        Direction = "ispod ocekivane vrednosti"
+                    });
+                }
+
+                RaiseWarningRaised(new WarningRaisedEventArgs
+                {
+                    WarningType = "OutOfBandWarning",
+                    Message = "Volume je ispod dozvoljenog odstupanja od tekuceg proseka.",
+                    Direction = "ispod ocekivane vrednosti",
+                    CurrentValue = sample.Volume,
+                    ExpectedValue = mean,
+                    Threshold = lowerLimit,
+                    Time = sample.DateTime
+                });
+            }
+            else if (sample.Volume > upperLimit)
+            {
+                if (OnOutOfBandWarning != null)
+                {
+                    OnOutOfBandWarning(this, new OutOfBandWarningEventArgs
+                    {
+                        Time = sample.DateTime,
+                        CurrentVolume = sample.Volume,
+                        Mean = mean,
+                        Limit = upperLimit,
+                        Direction = "iznad ocekivane vrednosti"
+                    });
+                }
+
+                RaiseWarningRaised(new WarningRaisedEventArgs
+                {
+                    WarningType = "OutOfBandWarning",
+                    Message = "Volume je iznad dozvoljenog odstupanja od tekuceg proseka.",
+                    Direction = "iznad ocekivane vrednosti",
+                    CurrentValue = sample.Volume,
+                    ExpectedValue = mean,
+                    Threshold = upperLimit,
+                    Time = sample.DateTime
+                });
+            }
+        }
+
+
+        private void CheckTemperatureSpikes(SensorSample sample)
+        {
+            if (previousSample == null)
+                return;
+
+            double deltaDht = sample.T_DHT - previousSample.T_DHT;
+
+            if (Math.Abs(deltaDht) > tDhtThreshold)
+            {
+                if (OnTemperatureSpikeDHT != null)
+                {
+                    OnTemperatureSpikeDHT(this, new TemperatureSpikeEventArgs
+                    {
+                        Time = sample.DateTime,
+                        Delta = deltaDht,
+                        CurrentValue = sample.T_DHT,
+                        PreviousValue = previousSample.T_DHT,
                         Threshold = tDhtThreshold,
-                        Time = sample.DateTime
+                        Direction = deltaDht > 0 ? "iznad ocekivanog" : "ispod ocekivanog"
                     });
                 }
-
-                double deltaBmp = sample.T_BMP - previousSample.T_BMP;
-
-                if (Math.Abs(deltaBmp) > tBmpThreshold)
+                /*
+                RaiseWarningRaised(new WarningRaisedEventArgs
                 {
-                    RaiseWarningRaised(new WarningRaisedEventArgs
-                    {
-                        WarningType = "TemperatureSpikeBMP",
-                        Message = "Detektovan je nagli skok temperature na BMP senzoru.",
-                        Direction = GetDirection(deltaBmp),
-                        CurrentValue = deltaBmp,
-                        ExpectedValue = 0,
-                        Threshold = tBmpThreshold,
-                        Time = sample.DateTime
-                    });
-                }
+                    WarningType = "TemperatureSpikeDHT",
+                    Message = "Detektovan je nagli skok temperature na DHT senzoru.",
+                    Direction = deltaDht > 0 ? "iznad ocekivanog" : "ispod ocekivanog",
+                    CurrentValue = deltaDht,
+                    ExpectedValue = 0,
+                    Threshold = tDhtThreshold,
+                    Time = sample.DateTime
+                });
+                */
             }
 
-            if (volumeMeanCount > 0)
-            {
-                double currentMean = volumeSum / volumeMeanCount;
-                double lowerLimit = currentMean * (1 - meanDeviationPercent);
-                double upperLimit = currentMean * (1 + meanDeviationPercent);
+            double deltaBmp = sample.T_BMP - previousSample.T_BMP;
 
-                if (sample.Volume < lowerLimit)
+            if (Math.Abs(deltaBmp) > tBmpThreshold)
+            {
+                if (OnTemperatureSpikeBMP != null)
                 {
-                    RaiseWarningRaised(new WarningRaisedEventArgs
+                    OnTemperatureSpikeBMP(this, new TemperatureSpikeEventArgs
                     {
-                        WarningType = "OutOfBandWarning",
-                        Message = "Volume je ispod dozvoljenog odstupanja od tekuceg proseka.",
-                        Direction = "ispod ocekivane vrednosti",
-                        CurrentValue = sample.Volume,
-                        ExpectedValue = currentMean,
-                        Threshold = lowerLimit,
-                        Time = sample.DateTime
+                        Time = sample.DateTime,
+                        Delta = deltaBmp,
+                        CurrentValue = sample.T_BMP,
+                        PreviousValue = previousSample.T_BMP,
+                        Threshold = tBmpThreshold,
+                        Direction = deltaBmp > 0 ? "iznad ocekivanog" : "ispod ocekivanog"
                     });
                 }
-                else if (sample.Volume > upperLimit)
+                /*
+                RaiseWarningRaised(new WarningRaisedEventArgs
                 {
-                    RaiseWarningRaised(new WarningRaisedEventArgs
-                    {
-                        WarningType = "OutOfBandWarning",
-                        Message = "Volume je iznad dozvoljenog odstupanja od tekuceg proseka.",
-                        Direction = "iznad ocekivane vrednosti",
-                        CurrentValue = sample.Volume,
-                        ExpectedValue = currentMean,
-                        Threshold = upperLimit,
-                        Time = sample.DateTime
-                    });
-                }
+                    WarningType = "TemperatureSpikeBMP",
+                    Message = "Detektovan je nagli skok temperature na BMP senzoru.",
+                    Direction = deltaBmp > 0 ? "iznad ocekivanog" : "ispod ocekivanog",
+                    CurrentValue = deltaBmp,
+                    ExpectedValue = 0,
+                    Threshold = tBmpThreshold,
+                    Time = sample.DateTime
+                });
+                */
             }
         }
 
@@ -327,15 +471,6 @@ namespace Server
             volumeMeanCount++;
         }
 
-        private string GetDirection(double delta)
-        {
-            if (delta > 0)
-            {
-                return "iznad ocekivanog";
-            }
-
-            return "ispod ocekivanog";
-        }
 
         private void RaiseTransferStarted(TransferStartedEventArgs e)
         {

@@ -26,6 +26,8 @@ namespace Klijent
                 return;
             }
 
+
+
             Console.WriteLine("=== Slanje uzoraka na server ===");
             using (SensorServiceClient client = new SensorServiceClient())
             {
@@ -92,5 +94,8 @@ namespace Klijent
             Console.WriteLine("Message: " + response.Message);
             Console.WriteLine("Status: " + response.Status);
         }
+
+        
+
     }
 }
