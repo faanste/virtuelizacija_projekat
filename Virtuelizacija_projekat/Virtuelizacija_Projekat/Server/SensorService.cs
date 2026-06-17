@@ -321,7 +321,7 @@ namespace Server
                     });
                 }
 
-                /*
+                
                 RaiseWarningRaised(new WarningRaisedEventArgs
                 {
                     WarningType = "VolumeSpike",
@@ -332,7 +332,7 @@ namespace Server
                     Threshold = vThreshold,
                     Time = sample.DateTime
                 });
-                */
+                
             }
         }
 
