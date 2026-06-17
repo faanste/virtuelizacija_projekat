@@ -420,7 +420,7 @@ namespace Server
                         Direction = deltaDht > 0 ? "iznad ocekivanog" : "ispod ocekivanog"
                     });
                 }
-                /*
+                
                 RaiseWarningRaised(new WarningRaisedEventArgs
                 {
                     WarningType = "TemperatureSpikeDHT",
@@ -431,7 +431,7 @@ namespace Server
                     Threshold = tDhtThreshold,
                     Time = sample.DateTime
                 });
-                */
+                
             }
 
             double deltaBmp = sample.T_BMP - previousSample.T_BMP;
@@ -450,7 +450,7 @@ namespace Server
                         Direction = deltaBmp > 0 ? "iznad ocekivanog" : "ispod ocekivanog"
                     });
                 }
-                /*
+                
                 RaiseWarningRaised(new WarningRaisedEventArgs
                 {
                     WarningType = "TemperatureSpikeBMP",
@@ -461,7 +461,7 @@ namespace Server
                     Threshold = tBmpThreshold,
                     Time = sample.DateTime
                 });
-                */
+                
             }
         }
 
